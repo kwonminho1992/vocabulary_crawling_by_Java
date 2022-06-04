@@ -24,6 +24,12 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 public class Tool {
 	
 	/**
+	 * Tool class has only default constructor
+	 */
+	public Tool() {
+	}
+	
+	/**
 	 * set Chrome options for selenium running and create ChromeDriver object
 	 * chromediver.exe's version : 101
 	 * (chromedriver download address : https://chromedriver.chromium.org/downloads)

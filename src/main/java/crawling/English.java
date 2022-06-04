@@ -22,9 +22,8 @@ import Exceptions.PhoneticAlphabetException;
  * @author Kwon Minho
  *
  */
-public class English extends Frame{
+public class English extends Language{
 	//field
-	private Tool tool = new Tool();
 	private ArrayList<String> partForms = new ArrayList<String>(); // all part forms of the word
 
 	/**
@@ -172,7 +171,8 @@ public class English extends Frame{
 	 */
 	@Override
 	public String addLink(String word) {
-		String link = "<a href=\"https://dictionary.cambridge.org/dictionary/english/" + word + "\">"
+		String link = "<a href=\"https://www.google.co.kr/search?q=" + word + "&tbm=isch\">image link</a><br><br>"
+				+ "<a href=\"https://dictionary.cambridge.org/dictionary/english/" + word + "\">"
 				+ "https://dictionary.cambridge.org/dictionary/english/" + word + "</a><br><br><a "
 				+ "href=\"https://en.dict.naver.com/#/search?range=all&query=" + word + "\">https://"
 				+ "en.dict.naver.com/#/search?range=all&query=" + word + "</a><br><br>";
@@ -205,6 +205,7 @@ public class English extends Frame{
 			driver.findElements(By.cssSelector(".listen_global_item.us._listen_global_item")).get(0).click(); // click American Accent
 			Thread.sleep(700);
 			String Mp3Address = driver.findElements(By.cssSelector(".btn_listen_global.mp3._btn_play_single")).get(0).getAttribute("data-playobj"); //get MP3 file's URL		
+			Tool tool = new Tool();
 			tool.fileDownload(Mp3Address, "pronunciation_en_" + word + ".mp3");
 			System.out.println("successfully download [pronunciation_en_" + word + ".mp3] !!");
 		} catch (Exception e) {

@@ -2,7 +2,9 @@ package crawling;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -22,7 +24,7 @@ import Exceptions.PhoneticAlphabetException;
  * @author Kwon Minho
  *
  */
-public abstract class Frame{
+public abstract class Language{
 		//field
 		private Tool tool = new Tool();	
 		private String resourceDir = tool.getResourceDir(); // resource directory's address 
@@ -30,7 +32,7 @@ public abstract class Frame{
 		/**
 		 * Frame class has only default constructor
 		 */
-		public Frame () {
+		public Language () {
 		}
 		
 		/**
@@ -42,10 +44,12 @@ public abstract class Frame{
 		 */
 		public ArrayList<ArrayList<String>> sortWords(String language) {
 			ArrayList<ArrayList<String>> words = new ArrayList<ArrayList<String>>(); // nested list stored information of each word
+			BufferedReader readCsv = null;
 			try {
 				//read csv file
 				String csvFile = (resourceDir + language + "_input.csv"); // create object
-				BufferedReader readCsv = new BufferedReader(new InputStreamReader(new FileInputStream(csvFile), Charset.forName("UTF-8"))); // create object (ansi encoding)
+//				BufferedReader readCsv = new BufferedReader(new InputStreamReader(new FileInputStream(csvFile), Charset.forName("UTF-8"))); // create object
+				readCsv = new BufferedReader(new FileReader((csvFile))); // create object
 				String line;
 				readCsv.readLine(); // skip header
 				for (int i = 0; (line = readCsv.readLine()) != null; i++){ // get words from the csv file and store into arraylist
@@ -53,10 +57,14 @@ public abstract class Frame{
 					contents.add(line);
 					words.add(contents);
 				}
-				readCsv.close();
 			} catch (Exception e) {
-				// TODO: handle exception
 				e.printStackTrace();
+			} finally {
+				try {
+					readCsv.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 			}
 			return words;
 		}
@@ -141,9 +149,10 @@ public abstract class Frame{
 		 * @param ArrayList<String> infos, String language
 		 */
 		public void fillCsvFile (ArrayList<String> infos, String language) {
+			CSVWriter writeCsv = null;
 			try {
 			//create csv file
-			CSVWriter writeCsv = new CSVWriter(new FileWriter(resourceDir + language + "_ouput.csv", true));	
+			writeCsv = new CSVWriter(new FileWriter(resourceDir + language + "_ouput.csv", true));	
 			Charset.forName("utf-8"); //encoding
 
 			int size = infos.size();
@@ -155,11 +164,15 @@ public abstract class Frame{
 			writeCsv.writeNext(contents);
 
 			System.out.println(infos.get(0) + " is added into " + language + "_output.csv");
-			writeCsv.close();
 			} catch (Exception e) {
-				// TODO: handle exception
 				e.printStackTrace();
-			} 
+			} finally {
+				try {
+					writeCsv.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 		
 		/**

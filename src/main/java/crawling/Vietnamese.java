@@ -16,10 +16,7 @@ import Exceptions.PhoneticAlphabetException;
  * @author Kwon Minho
  *
  */
-public class Vietnamese extends Frame {
-	//field
-	private Tool tool = new Tool();
-
+public class Vietnamese extends Language {
 	/**
 	 * Vietnamese class has only default constructor
 	 */
@@ -53,7 +50,7 @@ public class Vietnamese extends Frame {
 				part += driver.findElements(By.cssSelector("div.ub")).get(i).getText() + " / ";
 			}
 			if (part.equals("/ ")) {
-				throw new PartException("There is no part information of <" + word + "> in Vietgle dictionary site.");
+				throw new PartException("There is no part information of <" + word + "> in dictionary site.");
 			} else {
 				System.out.println(part);
 			}
@@ -77,7 +74,7 @@ public class Vietnamese extends Frame {
 				meaning += driver.findElements(By.cssSelector("div.m")).get(i).getText() + " /<br>";
 			}
 			if (meaning.equals("/ ")) {
-				throw new MeaningException("There is no meaning information of <" + word + "> in Vietgle dictionary site.");
+				throw new MeaningException("There is no meaning information of <" + word + "> in dictionary site.");
 			} else {
 				System.out.println(meaning);
 			}
@@ -104,7 +101,7 @@ public class Vietnamese extends Frame {
 				}
 			}
 			if (example.equals("{{c1::" + word + "}}")) {
-				throw new ExampleException("There is no example information of <" + word + "> in Vietgle dictionary site.");
+				throw new ExampleException("There is no example information of <" + word + "> in dictionary site.");
 			} else {
 				System.out.println(example);
 			}
@@ -156,7 +153,8 @@ public class Vietnamese extends Frame {
 	 */
 	@Override
 	public String addLink(String word) {
-		String link = "<a href=\"http://tratu.coviet.vn/hoc-tieng-anh/tu-dien/lac-viet/V-V/" + word + ".html\">"
+		String link = "<a href=\"https://www.google.co.kr/search?q=" + word + "&tbm=isch\">image link</a><br><br>"
+		        + "<a href=\"http://tratu.coviet.vn/hoc-tieng-anh/tu-dien/lac-viet/V-V/" + word + ".html\">"
 				+ "http://tratu.coviet.vn/hoc-tieng-anh/tu-dien/lac-viet/V-V/" + word + ".html" + "</a><br><br><a "
 				+ "href=\"http://tratu.soha.vn/dict/vn_vn/" + word + "\">"
 				+ "http://tratu.soha.vn/dict/vn_vn/" + word + "</a><br><br><a "
@@ -191,6 +189,7 @@ public class Vietnamese extends Frame {
 			driver.findElements(By.className("highlight")).get(0).click(); // get into the word page
 			Thread.sleep(1000);
 			String Mp3Address = driver.findElements(By.cssSelector("button.btn_listen.mp3")).get(0).getAttribute("purl"); //get MP3 file's URL		
+			Tool tool = new Tool();
 			tool.fileDownload(Mp3Address, "pronunciation_vn_" + word + ".mp3");
 			System.out.println("successfully download [pronunciation_vn_" + word + ".mp3] !!");
 		} catch (Exception e) {
