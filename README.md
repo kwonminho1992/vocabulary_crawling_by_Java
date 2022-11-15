@@ -1,8 +1,10 @@
-외국어 단어 크롤링 프로그램
+vocubulary crawling program (used in anki)
 
-개발환경: JAVA SE 8, selenium 4.1.4
-200~chromediver.exe 버전 : 101
+development environment: JAVA SE 8, selenium 4.1.4
+chromediver.exe version : 106
 
-현재 크롱링 가능한 언어
-1. 영어
-2. 베트남어
+the languages available for crawling
+
+1. English
+2. Vietnamese
+3. Korean
