@@ -18,13 +18,14 @@ public class Main {
 
   public static void main(String[] args) throws InterruptedException {
     // choose language to run crawling program
-    String[] choice = new String[3];
+    String[] choice = new String[4];
     choice[0] = "english";
     choice[1] = "vietnamese";
     choice[2] = "korean";
+    choice[3] = "chineseKorean";
 
 
-    runCrawling(choice[0]); // run crawling program (get language as argument)
+    runCrawling(choice[3]); // run crawling program (get language as argument)
   }
 
   /**
@@ -35,17 +36,16 @@ public class Main {
    * @throws InterruptedException
    */
   public static void runCrawling(String choice) throws InterruptedException {
-    Language language; // declare frame object (superclass of each languages such as English,
-                       // Vietnamese...)
-    if (choice.equals("english")) { // if user choose english, frame object will be English type and
-                                    // run English crawling
+    Language language;
+    if (choice.equals("english")) {
       language = new English();
-    } else if (choice.contentEquals("vietnamese")) { // if user choose vietnamese, frame object will
-                                                     // be Vietnamese type and run Vietnamese
+    } else if (choice.equals("vietnamese")) {
       // crawling
       language = new Vietnamese();
-    } else {
+    } else if (choice.equals("korean")) {
       language = new Korean();
+    } else {
+      language = new ChineseKorean();
     }
 
     Tool tool = new Tool();

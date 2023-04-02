@@ -39,13 +39,12 @@ public class Tool {
 
     // set webdriver's path
     System.setProperty("webdriver.chrome.driver", path.toString());
-
     // set webdriver's option
     ChromeOptions options = new ChromeOptions();
     options.addArguments("--headless", "--disable-gpu", "--blink-setting=imagesEnable=false",
         "--window-size=1920,1200", "--ignore-certificate-errors", "--disable-extensions",
         "--no-sandbox", "--disable-dev-shm-usage", "--disable-default-apps",
-        "--disable-popup-blcking", "--blink-setting");
+        "--disable-popup-blcking", "--blink-setting", "--remote-allow-origins=*");
     ChromeDriver driver = new ChromeDriver(options);
     return driver;
   }
