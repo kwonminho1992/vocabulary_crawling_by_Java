@@ -1,7 +1,13 @@
 package crawling;
-
-
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.openqa.selenium.By;
 import org.openqa.selenium.chrome.ChromeDriver;
 import Exceptions.ExampleException;
@@ -9,6 +15,10 @@ import Exceptions.MP3DownloadException;
 import Exceptions.MeaningException;
 import Exceptions.PartException;
 import Exceptions.PhoneticAlphabetOrHanjaException;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 
 /**
@@ -19,6 +29,9 @@ import Exceptions.PhoneticAlphabetOrHanjaException;
  */
 public class English extends Language {
   // field
+  private static final String GUARDIAN_API_TEMPLATE =
+      "https://content.guardianapis.com/search?q=%s&page-size=5&order-by=newest&show-fields=bodyText&api-key=test";
+  private static final int MAX_EXAMPLE_SENTENCES = 3;
   private ArrayList<String> partForms = new ArrayList<String>(); // all part forms of the word
 
   /**
@@ -108,38 +121,106 @@ public class English extends Language {
   public String addExample(String word, ChromeDriver driver) throws ExampleException {
     String example = "{{c1::" + word + "}}";
     try {
-      int size = driver.findElements(By.cssSelector(".eg.deg")).size();
-      for (int i = 0; i < size; i++) { // example 1
-        String str = driver.findElements(By.cssSelector(".eg.deg")).get(i).getText();
-        for (int j = this.partForms.size() - 1; j >= 0; j--) { // convert example into cloze type
-          if (str.contains(this.partForms.get(j))) {
-            example += " /<br>"
-                + str.replace(this.partForms.get(j), "{{c1::" + this.partForms.get(j) + "}}");
-            break;
-          }
-        }
-      }
-      size = driver.findElements(By.cssSelector("span.deg")).size();
-      for (int i = 0; i < size; i++) { // example 2
-        String str = driver.findElements(By.cssSelector("span.deg")).get(i).getText();
-        for (int j = this.partForms.size() - 1; j >= 0; j--) { // convert example into cloze type
-          if (str.contains(this.partForms.get(j))) {
-            example += " /<br>"
-                + str.replace(this.partForms.get(j), "{{c1::" + this.partForms.get(j) + "}}");
-            break;
-          }
-        }
-      }
-      if (example.equals("{{c1::" + word + "}}")) {
+      Pattern pattern = createSearchPattern(word);
+      ArrayList<String> sentences = fetchExampleSentences(word, pattern);
+      if (sentences.isEmpty()) {
         throw new ExampleException(
-            "There is no example information of <" + word + "> in Cambridge dictionary site.");
-      } else {
-        System.out.println(example);
+            "There is no example information of <" + word + "> in recent news articles.");
       }
-    } catch (Exception e) {
+      for (String sentence : sentences) {
+        example += " /<br>" + sentence;
+      }
+      System.out.println(example);
+    } catch (IOException | RuntimeException e) {
       throw new ExampleException("Failed to add <" + word + "> into example field");
     }
     return example;
+  }
+
+  private Pattern createSearchPattern(String word) {
+    ArrayList<String> forms = new ArrayList<String>(this.partForms);
+    if (!forms.contains(word)) {
+      forms.add(word);
+    }
+    StringBuilder builder = new StringBuilder();
+    for (String form : forms) {
+      if (form == null) {
+        continue;
+      }
+      String trimmed = form.trim();
+      if (trimmed.isEmpty()) {
+        continue;
+      }
+      if (builder.length() > 0) {
+        builder.append("|");
+      }
+      builder.append(Pattern.quote(trimmed));
+    }
+    if (builder.length() == 0) {
+      builder.append(Pattern.quote(word));
+    }
+    return Pattern.compile("\\b(" + builder.toString() + ")\\b", Pattern.CASE_INSENSITIVE);
+  }
+
+  private ArrayList<String> fetchExampleSentences(String word, Pattern pattern)
+      throws IOException {
+    ArrayList<String> sentences = new ArrayList<String>();
+    HttpURLConnection connection = null;
+    try {
+      String encodedWord = URLEncoder.encode(word, "UTF-8");
+      String requestUrl = String.format(GUARDIAN_API_TEMPLATE, encodedWord);
+      URL url = new URL(requestUrl);
+      connection = (HttpURLConnection) url.openConnection();
+      connection.setRequestMethod("GET");
+      connection.setConnectTimeout(5000);
+      connection.setReadTimeout(5000);
+      connection.setRequestProperty("Accept", "application/json");
+      try (InputStreamReader reader =
+          new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8)) {
+        JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+        JsonObject response = root.getAsJsonObject("response");
+        if (response == null || !response.has("results")) {
+          return sentences;
+        }
+        JsonArray results = response.getAsJsonArray("results");
+        for (int i = 0; i < results.size() && sentences.size() < MAX_EXAMPLE_SENTENCES; i++) {
+          JsonObject resultObj = results.get(i).getAsJsonObject();
+          JsonObject fields = resultObj.getAsJsonObject("fields");
+          if (fields == null || !fields.has("bodyText")) {
+            continue;
+          }
+          String bodyText = fields.get("bodyText").getAsString();
+          String[] splitted = bodyText.split("(?<=[.!?])\\s+");
+          for (int j = 0; j < splitted.length && sentences.size() < MAX_EXAMPLE_SENTENCES; j++) {
+            String normalized = splitted[j].replaceAll("\\s+", " ").trim();
+            if (normalized.isEmpty()) {
+              continue;
+            }
+            Matcher matcher = pattern.matcher(normalized);
+            if (matcher.find()) {
+              sentences.add(toClozeSentence(normalized, pattern));
+              break;
+            }
+          }
+        }
+      }
+    } finally {
+      if (connection != null) {
+        connection.disconnect();
+      }
+    }
+    return sentences;
+  }
+
+  private String toClozeSentence(String sentence, Pattern pattern) {
+    Matcher matcher = pattern.matcher(sentence);
+    if (matcher.find()) {
+      StringBuffer builder = new StringBuffer();
+      matcher.appendReplacement(builder, "{{c1::" + matcher.group() + "}}");
+      matcher.appendTail(builder);
+      return builder.toString().trim();
+    }
+    return sentence.trim();
   }
 
   /**
