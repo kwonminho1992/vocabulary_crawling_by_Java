@@ -1,6 +1,8 @@
 package crawling;
 
+import java.util.List;
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import Exceptions.ExampleException;
 import Exceptions.MP3DownloadException;
@@ -43,25 +45,28 @@ public class Vietnamese extends Language {
    */
   @Override
   public String addPart(String word, ChromeDriver driver) throws PartException {
-    String part = "/ ";
+    StringBuilder partBuilder = new StringBuilder("/ ");
     try {
       driver.get("http://tratu.coviet.vn/hoc-tieng-anh/tu-dien/lac-viet/V-V/" + word + ".html"); // access
-                                                                                                 // dictionary
+                                                                                                    // dictionary
       Thread.sleep(1000);
-      int size = driver.findElements(By.cssSelector("div.ub")).size();
-      for (int i = 0; i < size; i++) {
-        part += driver.findElements(By.cssSelector("div.ub")).get(i).getText() + " / ";
+      List<WebElement> partElements = driver.findElements(By.cssSelector("div.ub"));
+      for (WebElement element : partElements) {
+        String text = element.getText().trim();
+        if (!text.isEmpty()) {
+          partBuilder.append(text).append(" / ");
+        }
       }
-      if (part.equals("/ ")) {
+      if (partBuilder.length() == 2) {
         throw new PartException(
             "There is no part information of <" + word + "> in dictionary site.");
       } else {
-        System.out.println(part);
+        System.out.println(partBuilder.toString());
       }
     } catch (Exception e) {
       throw new PartException("Failed to add <" + word + "> into part field");
     }
-    return part;
+    return partBuilder.toString();
   }
 
   /**
@@ -73,22 +78,25 @@ public class Vietnamese extends Language {
    */
   @Override
   public String addMeaning(String word, ChromeDriver driver) throws MeaningException {
-    String meaning = "/ ";
+    StringBuilder meaningBuilder = new StringBuilder("/ ");
     try {
-      int size = driver.findElements(By.cssSelector("div.m")).size();
-      for (int i = 0; i < size; i++) {
-        meaning += driver.findElements(By.cssSelector("div.m")).get(i).getText() + " /<br>";
+      List<WebElement> meaningElements = driver.findElements(By.cssSelector("div.m"));
+      for (WebElement element : meaningElements) {
+        String text = element.getText().trim();
+        if (!text.isEmpty()) {
+          meaningBuilder.append(text).append(" /<br>");
+        }
       }
-      if (meaning.equals("/ ")) {
+      if (meaningBuilder.length() == 2) {
         throw new MeaningException(
             "There is no meaning information of <" + word + "> in dictionary site.");
       } else {
-        System.out.println(meaning);
+        System.out.println(meaningBuilder.toString());
       }
     } catch (Exception e) {
       throw new MeaningException("Failed to add <" + word + "> into meaning field");
     }
-    return meaning;
+    return meaningBuilder.toString();
   }
 
   /**
@@ -100,25 +108,29 @@ public class Vietnamese extends Language {
    */
   @Override
   public String addExample(String word, ChromeDriver driver) throws ExampleException {
-    String example = "{{c1::" + word + "}}";
+    StringBuilder exampleBuilder = new StringBuilder("{{c1::").append(word).append("}}");
+    int initialLength = exampleBuilder.length();
     try {
-      int size = driver.findElements(By.cssSelector("div.e")).size();
-      for (int i = 0; i < size; i++) {
-        String str = driver.findElements(By.cssSelector("div.e")).get(i).getText();
-        if (str.contains(word)) {
-          example += " /<br>" + str.replace(word, "{{c1::" + word + "}}");
+      List<WebElement> exampleElements = driver.findElements(By.cssSelector("div.e"));
+      for (WebElement element : exampleElements) {
+        String text = element.getText().trim();
+        if (text.contains(word)) {
+          String replaced = text.replace(word, "{{c1::" + word + "}}").trim();
+          if (!replaced.isEmpty()) {
+            exampleBuilder.append(" /<br>").append(replaced);
+          }
         }
       }
-      if (example.equals("{{c1::" + word + "}}")) {
+      if (exampleBuilder.length() == initialLength) {
         throw new ExampleException(
             "There is no example information of <" + word + "> in dictionary site.");
       } else {
-        System.out.println(example);
+        System.out.println(exampleBuilder.toString());
       }
     } catch (Exception e) {
       throw new ExampleException("Failed to add <" + word + "> into example field");
     }
-    return example;
+    return exampleBuilder.toString();
   }
 
   /**
@@ -131,23 +143,25 @@ public class Vietnamese extends Language {
   public String addPhoneticAlphabetOrHanja(String word, ChromeDriver driver)
       throws PhoneticAlphabetOrHanjaException {
     driver.get("https://hvdic.thivien.net/hv/" + word); // access từ điển Hán Nôm
-    String hanja = "/ ";
+    StringBuilder hanjaBuilder = new StringBuilder("/ ");
     try {
-      int size = driver.findElements(By.cssSelector("div.hvres-word.han")).size();
-      for (int i = 0; i < size; i++) {
-        hanja += driver.findElements(By.cssSelector("div.hvres-word.han")).get(i).getText() + " / ";
-
+      List<WebElement> hanjaElements = driver.findElements(By.cssSelector("div.hvres-word.han"));
+      for (WebElement element : hanjaElements) {
+        String text = element.getText().trim();
+        if (!text.isEmpty()) {
+          hanjaBuilder.append(text).append(" / ");
+        }
       }
-      if (hanja.equals("/ ")) {
+      if (hanjaBuilder.length() == 2) {
         throw new PhoneticAlphabetOrHanjaException(
             "There is no hanja information of <" + word + "> in từ điển Hán Nôm site.");
       } else {
-        System.out.println(hanja);
+        System.out.println(hanjaBuilder.toString());
       }
     } catch (Exception e) {
       throw new PhoneticAlphabetOrHanjaException("Failed to add <" + word + "> into hanja field");
     }
-    return hanja;
+    return hanjaBuilder.toString();
   }
 
   /**
@@ -207,16 +221,22 @@ public class Vietnamese extends Language {
       // access to Naver dictionary
       driver.get("https://dict.naver.com/vikodict/#/search?query=" + word); // access to the site
       Thread.sleep(1000);
-      driver.findElements(By.className("highlight")).get(0).click(); // get into the word page
+      List<WebElement> highlights = driver.findElements(By.className("highlight"));
+      if (highlights.isEmpty()) {
+        throw new MP3DownloadException("Failed to download MP3 file of <" + word + ">.");
+      }
+      highlights.get(0).click(); // get into the word page
       Thread.sleep(1000);
-      String Mp3Address =
-          driver.findElements(By.cssSelector("button.btn_listen.mp3")).get(0).getAttribute("purl"); // get
-                                                                                                    // MP3
-                                                                                                    // file's
-                                                                                                    // URL
+      List<WebElement> mp3Buttons = driver.findElements(By.cssSelector("button.btn_listen.mp3"));
+      if (mp3Buttons.isEmpty()) {
+        throw new MP3DownloadException("Failed to download MP3 file of <" + word + ">.");
+      }
+      String Mp3Address = mp3Buttons.get(0).getAttribute("purl"); // get MP3 file's URL
       Tool tool = new Tool();
       tool.fileDownload(Mp3Address, "pronunciation_vn_" + word + ".mp3");
       System.out.println("successfully download [pronunciation_vn_" + word + ".mp3] !!");
+    } catch (MP3DownloadException e) {
+      throw e;
     } catch (Exception e) {
       throw new MP3DownloadException("Failed to download MP3 file of <" + word + ">.");
     }

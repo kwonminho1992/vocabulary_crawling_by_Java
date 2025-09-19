@@ -7,5 +7,3 @@ the languages available for crawling
 
 1. English
 2. Vietnamese
-3. Korean
-4. Chinese-Korean

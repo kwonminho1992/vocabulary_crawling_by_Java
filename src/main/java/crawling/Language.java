@@ -1,11 +1,13 @@
 package crawling;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import org.openqa.selenium.chrome.ChromeDriver;
 import com.opencsv.CSVWriter;
 import Exceptions.ExampleException;
@@ -42,30 +44,20 @@ public abstract class Language {
     ArrayList<ArrayList<String>> words = new ArrayList<ArrayList<String>>(); // nested list stored
                                                                              // information of each
                                                                              // word
-    BufferedReader readCsv = null;
-    try {
-      // read csv file
-      String csvFile = (resourceDir + language + "_input.csv"); // create object
-      // BufferedReader readCsv = new BufferedReader(new InputStreamReader(new
-      // FileInputStream(csvFile), Charset.forName("UTF-8"))); // create object
-      readCsv = new BufferedReader(new FileReader((csvFile))); // create object
+    Path csvPath = Paths.get(resourceDir + language + "_input.csv");
+    try (BufferedReader readCsv = Files.newBufferedReader(csvPath, StandardCharsets.UTF_8)) {
       String line;
       readCsv.readLine(); // skip header
-      for (int i = 0; (line = readCsv.readLine()) != null; i++) { // get words from the csv file and
-                                                                  // store into arraylist
-        ArrayList<String> contents = new ArrayList<String>(); // arraylist to store information of
-                                                              // the word
+      while ((line = readCsv.readLine()) != null) {
+        if (line.trim().isEmpty()) {
+          continue;
+        }
+        ArrayList<String> contents = new ArrayList<String>();
         contents.add(line);
         words.add(contents);
       }
-    } catch (Exception e) {
+    } catch (IOException e) {
       e.printStackTrace();
-    } finally {
-      try {
-        readCsv.close();
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
     }
     return words;
   }
@@ -156,29 +148,12 @@ public abstract class Language {
    * @param ArrayList<String> infos, String language
    */
   public void fillCsvFile(ArrayList<String> infos, String language) {
-    CSVWriter writeCsv = null;
-    try {
-      // create csv file
-      writeCsv = new CSVWriter(new FileWriter(resourceDir + language + "_output.csv", true));
-      Charset.forName("utf-8"); // encoding
-
-      int size = infos.size();
-      String[] contents = new String[size];
-      for (int j = 0; j < size; j++) {
-        contents[j] = infos.get(j);
-      }
-
-      writeCsv.writeNext(contents);
-
+    String outputFile = resourceDir + language + "_output.csv";
+    try (CSVWriter writeCsv = new CSVWriter(new FileWriter(outputFile, true))) {
+      writeCsv.writeNext(infos.toArray(new String[0]));
       System.out.println(infos.get(0) + " is added into " + language + "_output.csv");
-    } catch (Exception e) {
+    } catch (IOException e) {
       e.printStackTrace();
-    } finally {
-      try {
-        writeCsv.close();
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
     }
   }
 
